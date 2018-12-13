@@ -27,6 +27,3 @@ class RequestQueue(PriorityQueue):
     def done(self):
         with self.all_tasks_done:
             return not self.unfinished_tasks
-
-class ResponseQueue(Queue):
-    pass

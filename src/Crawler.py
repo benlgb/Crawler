@@ -4,22 +4,25 @@
 爬虫主体
 '''
 
-from src.Queue import RequestQueue, ResponseQueue
-from src.Manager import RequestManager, ResponseManager
+from src.Queue import RequestQueue
+from src.Controller import RequestController
 
 class Crawler:
+    SETTINGS = {
+        'MIDDLEWARES': []
+    }
+
     def __init__(self):
-        self.req_queue = RequestQueue()
-        self.res_queue = ResponseQueue()
-        args = self.req_queue, self.res_queue
-        self.req_manager = RequestManager(*args)
-        self.res_manager = ResponseManager(*args)
+        self.queue = RequestQueue()
+        self.settings = Crawler.SETTINGS
+        self.settings.update(self.SETTINGS)
+        self.middlewares = self.settings['MIDDLEWARES']
+        self.controller = RequestController(self.queue, self.middlewares)
 
     def run(self):
-        self.res_manager.handle(self.start())
-        while not self.req_queue.empty():
-            self.req_manager.request()
-            self.res_manager.response()
+        self.controller.result_handler(self.start())
+        while not self.queue.empty():
+            self.controller.request()
         
     def start(self):
         pass

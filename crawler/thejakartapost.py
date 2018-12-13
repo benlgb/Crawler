@@ -4,6 +4,12 @@ from urllib.parse import urljoin
 from src import *
 
 class ThejakartapostCrawler(Crawler):
+    SETTINGS = {
+        'MIDDLEWARES': [
+            UserAgentMiddleware()
+        ]
+    }
+
     def start(self):
         yield Request('http://www.thejakartapost.com/index', cb=self.list_parse)
 
@@ -18,7 +24,7 @@ class ThejakartapostCrawler(Crawler):
             print(title)
             print(url)
             print()
-
+        
         # 下一页
         next_page = soup.select('.navigation-page a.jp-last')
         if next_page:

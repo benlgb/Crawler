@@ -17,7 +17,17 @@ class Request:
         self.kwargs = kwargs
 
     def __getattr__(self, attr):
-        return self.kwargs[attr]
+        try:
+            return self.kwargs[attr]
+        except KeyError:
+            msg = '\'Request\' object has no attribute \'%s\''
+            raise AttributeError(msg % attr)
+
+    def __setattr__(self, attr, value):
+        if attr in ['url', 'method', 'cb', 'kwargs']:
+            object.__setattr__(self, attr, value)
+        else:
+            self.kwargs[attr] = value
 
 class Response:
     def __init__(self, res, req):
