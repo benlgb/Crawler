@@ -1,0 +1,8 @@
+# 测试文件
+test
+
+# 临时文件
+*.pyc
+
+# vscode配置文件夹
+.vscode
