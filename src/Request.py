@@ -10,10 +10,11 @@ def cb(*args, **kwargs):
     pass
 
 class Request:
-    def __init__(self, url, method='get', cb=cb, **kwargs):
+    def __init__(self, url, method='get', cb=cb, item=None, **kwargs):
         self.url = url
         self.method = method.lower()
         self.cb = cb
+        self.item = item
         self.kwargs = kwargs
 
     def __getattr__(self, attr):
@@ -24,7 +25,7 @@ class Request:
             raise AttributeError(msg % attr)
 
     def __setattr__(self, attr, value):
-        if attr in ['url', 'method', 'cb', 'kwargs']:
+        if attr in ['url', 'method', 'cb', 'item', 'kwargs']:
             object.__setattr__(self, attr, value)
         else:
             self.kwargs[attr] = value

@@ -4,8 +4,10 @@
 请求响应管理器
 '''
 
+import json
+import inspect
 import requests
-from collections import Iterable
+from src.Items import Item
 from src.Request import Request, Response
 
 class RequestController:
@@ -37,10 +39,17 @@ class RequestController:
                 return result
 
     def result_handler(self, result):
-        if isinstance(result, Iterable):
+        if inspect.isgenerator(result):
             for _result in result:
                 self.result_handler(_result)
         elif isinstance(result, Request):
             self.queue.put(result, 0)
+        elif isinstance(result, Item):
+            result.save()
+        elif isinstance(result, dict):
+            try:
+                print(json.dumps(result, indent=4))
+            except TypeError:
+                print(result)
         elif result is not None:
             print(result)

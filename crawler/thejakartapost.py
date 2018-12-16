@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from urllib.parse import urljoin
-from src import *
+from src import Crawler, Request, UserAgentMiddleware
 
 class ThejakartapostCrawler(Crawler):
     SETTINGS = {
