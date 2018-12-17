@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 '''
-爬虫程序 version: 2.1.0
+爬虫程序 version: 2.1.1
 '''
 
 from crawler.twitter import TwitterCrawler, TwitterAsyncCrawler
