@@ -14,34 +14,64 @@ from src.Request import Request, Response
 from src.Exception import DropRequestException
 
 class RequestController:
-    def __init__(self, queue, middlewares=[], session=requests):
-        self.queue = queue
-        self.session = session
-        self.middlewares = middlewares
+    """请求控制器
 
-    def request(self):
-        req = self.queue.get()
-        if self.add_middlewares('before_request', req):
-            return
-        method = getattr(self.session, req.method)
+    Description:
+        负责单独一个线程的请求处理，只能启动一个
+    """
+
+    def __init__(self, crawler):
+        self.crawler = crawler
+        self.queue = crawler.queue
+        self.middlewares = crawler.middlewares
+
+    def __call__(self):
+        """请求协程启动
+
+        Description:
+            处理请求数据直至主程序通知停止
+        """
+        with requests.Session() as session:
+            self.session = session
+            while not self.queue.empty():
+                req = self.queue.get()
+                self.crawler.request_start(req)
+                self._request(req)
+                self.crawler.request_end(req)
+                
+    def _request(self, req):
         try:
-            res = method(req.url, **req.kwargs)
-        except Exception as e:
-            self.add_middlewares('request_exception', req, e)
-            return
-        res = Response(res, req)
-        if self.add_middlewares('after_request', res):
-            return
-        self.result_handler(res.cb())
+            self._middleware('before_request', req)
+            method = getattr(self.session, req.method)
+            with method(req.url, **req.kwargs) as res:
+                res = Response(res, req)
+                self._middleware('after_request', res)
+                self.result_handler(res.cb())
+        except DropRequestException: # 自动抛弃无用请求
+            pass
+        except requests.RequestException as e: # 请求异常处理
+            self._middleware('request_exception', req, error=e)
 
-    def add_middlewares(self, method, *args):
+    def _middleware(self, method, req, **kwargs):
         for middleware in self.middlewares:
-            result = getattr(middleware, method)(*args)
-            if result is not None:
-                self.result_handler(result)
-                return result
+            _method = getattr(middleware, method)
+            result = _method(req, crawler=self.crawler, **kwargs)
+            self.result_handler(result)
 
     def result_handler(self, result):
+        """处理响应解析结果
+
+        Description:
+            处理响应解析结果，包括如下情况
+                生成器结果
+                Request对象
+                Item对象
+                字典
+                其他
+
+        Args:
+            result: 响应解析结果
+        """
         if inspect.isgenerator(result):
             for _result in result:
                 self.result_handler(_result)
@@ -57,17 +87,12 @@ class RequestController:
         elif result is not None:
             print(result)
 
-class AsyncRequestController:
+class AsyncRequestController(RequestController):
     """异步请求控制器
 
     Description:
         负责单独一个协程的请求处理，可同时启动多个
     """
-
-    def __init__(self, crawler):
-        self.crawler = crawler
-        self.queue = crawler.queue
-        self.middlewares = crawler.middlewares
 
     async def __call__(self):
         """请求协程启动
@@ -116,7 +141,7 @@ class AsyncRequestController:
                 生成器结果
                 Request对象
                 Item对象
-                字典s
+                字典
                 其他
 
         Args:
@@ -130,14 +155,5 @@ class AsyncRequestController:
         elif inspect.isgenerator(result):
             for _result in result:
                 await self.result_handler(_result)
-        elif isinstance(result, Request):
-            self.queue.put(result, 0)
-        elif isinstance(result, Item):
-            result.save()
-        elif isinstance(result, dict):
-            try:
-                print(json.dumps(result, indent=4))
-            except TypeError:
-                print(result)
-        elif result is not None:
-            print(result)
+        else:
+            super().result_handler(result)

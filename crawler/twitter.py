@@ -44,6 +44,8 @@ class TwitterCrawler(Crawler):
                     'include_entities': '1',
                     'max_position': '',
                     'reset_error_state': 'false'
+                }, headers={
+                    'accept-language': 'zh-CN,zh-HK;q=0.9,zh;q=0.8,zh-TW;q=0.7'
                 }, cb=self.reply_parse, item=data)
             else:
                 yield TwitterItem(data)

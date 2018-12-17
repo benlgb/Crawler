@@ -11,61 +11,45 @@ from src.Controller import RequestController, AsyncRequestController
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 class Crawler:
+    """爬虫控制器
+
+    Description:
+        爬虫主程序，描述请求过程和响应处理过程
+    """
+
     SETTINGS = {
-        'MIDDLEWARES': []
-    }
-
-    def __init__(self):
-        self.queue = RequestQueue()
-        self.settings = Crawler.SETTINGS
-        self.settings.update(self.SETTINGS)
-        self.middlewares = self.settings['MIDDLEWARES']
-        self.controller = RequestController(self.queue, self.middlewares)
-
-    def run(self):
-        self.controller.result_handler(self.start())
-        while not self.queue.empty():
-            self.controller.request()
-        
-    def start(self):
-        pass
-
-class AsyncCrawler:
-    SETTINGS = {
-        'THREAD': 10,
         'MIDDLEWARES': [],
-        'QUEUE': RequestQueue,
+        'QUEUE': RequestQueue
     }
 
     def __init__(self):
-        self.settings = self.get_settings()
+        self.settings = AsyncCrawler.SETTINGS.copy()
+        self.settings.update(self.SETTINGS)
         self.queue = self.settings['QUEUE']()
         self.middlewares = self.settings['MIDDLEWARES']
-        self.controllers = []
-        for i in range(self.settings['THREAD']):
-            controller = AsyncRequestController(self)
-            self.controllers.append(controller)
+        self.controller = RequestController(self)
 
     def __call__(self):
         self.running_count = 0
-        loop = asyncio.get_event_loop()
 
         # 加载开始请求
         start_request = self.start() or None
-        result_handler = self.controllers[0].result_handler
-        loop.run_until_complete(result_handler(start_request))
+        result_handler = self.controller.result_handler
+        result_handler(start_request)
 
         # 启动请求控制器
-        jobs = [i() for i in self.controllers]
-        loop.run_until_complete(asyncio.gather(*jobs))
-
+        self.controller()
+        
     def start(self):
-        pass
+        """开始请求列表
 
-    def get_settings(self):
-        settings = AsyncCrawler.SETTINGS.copy()
-        settings.update(self.SETTINGS)
-        return settings
+        Description:
+            获取初始的请求列表
+
+        Result:
+            同响应处理结果
+        """
+        pass
     
     def request_start(self, req):
         """请求处理开始
@@ -100,3 +84,37 @@ class AsyncCrawler:
 
         """
         return self.running_count == 0
+
+class AsyncCrawler(Crawler):
+    """异步爬虫控制器
+
+    Description:
+        爬虫主程序，描述请求过程和响应处理过程
+    """
+
+    SETTINGS = {
+        'THREAD': 10,
+        'MIDDLEWARES': [],
+        'QUEUE': RequestQueue,
+    }
+
+    def __init__(self):
+        self.settings = AsyncCrawler.SETTINGS.copy()
+        self.settings.update(self.SETTINGS)
+        self.queue = self.settings['QUEUE']()
+        self.middlewares = self.settings['MIDDLEWARES']
+        self.controllers = [AsyncRequestController(self)
+            for i in range(self.settings['THREAD'])]
+
+    def __call__(self):
+        self.running_count = 0
+        loop = asyncio.get_event_loop()
+
+        # 加载开始请求
+        start_request = self.start() or None
+        result_handler = self.controllers[0].result_handler
+        loop.run_until_complete(result_handler(start_request))
+
+        # 启动请求控制器
+        jobs = [i() for i in self.controllers]
+        loop.run_until_complete(asyncio.gather(*jobs))

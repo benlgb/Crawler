@@ -32,6 +32,12 @@
 - 修复thejakartapost改版造成的信息提取失败问题
 - 增加Middleware处理函数参数crawler
 - 修改Middleware处理机制
+- 修复了一些bug
+
+### 2.1.0 ###
+
+- 同步单线程程序的逻辑
+- 修复了一些bug
 
 ## 三、测试用例 ##
 
