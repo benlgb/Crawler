@@ -47,4 +47,4 @@
 ## 三、测试用例 ##
 
 - thejakartapost
-- ~~twitter~~
+- twitter
