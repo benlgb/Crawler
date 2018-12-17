@@ -1,5 +1,6 @@
 # 测试文件
 test
+test.py
 
 # 临时文件
 *.pyc

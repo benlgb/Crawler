@@ -43,6 +43,3 @@ class Response:
     
     def cb(self):
         return self.req.cb(self)
-
-    def soup(self):
-        return BeautifulSoup(self.content, 'lxml')

@@ -26,7 +26,14 @@
 - 添加Proxies中间件
 - 修复了一些bug
 
+### 2.0.0 ###
+
+- *异步爬取
+- 修复thejakartapost改版造成的信息提取失败问题
+- 增加Middleware处理函数参数crawler
+- 修改Middleware处理机制
+
 ## 三、测试用例 ##
 
 - thejakartapost
-- twitter
+- ~~twitter~~

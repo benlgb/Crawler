@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from bs4 import BeautifulSoup
 from urllib.parse import urljoin
-from src import Crawler, Request, UserAgentMiddleware
+from src import Crawler, AsyncCrawler, Request, UserAgentMiddleware, ShowUrlMiddleware
 
 class ThejakartapostCrawler(Crawler):
     SETTINGS = {
@@ -17,16 +18,45 @@ class ThejakartapostCrawler(Crawler):
         soup = res.soup()
 
         # 列表页信息获取
-        for li in soup.select('li.ic-all.latestEntry'):
-            a = li.find_all('a')[1]
-            url = urljoin(res.url, a['href'])
-            title = a.get_text(strip=True)
-            print(title)
-            print(url)
+        for li in soup.select('div.listNews.whtPD.columns'):
+            print(li.find('h2', 'titleNews').get_text(strip=True))
+            print(urljoin(res.url, li.a['href']))
             print()
         
         # 下一页
         next_page = soup.select('.navigation-page a.jp-last')
         if next_page:
             url = urljoin(res.url, next_page[0]['href'])
+            yield Request(url, cb=self.list_parse)
+
+class ThejakartapostAsyncCrawler(AsyncCrawler):
+    SETTINGS = {
+        'MIDDLEWARES': {
+            UserAgentMiddleware(),
+            ShowUrlMiddleware()
+        },
+        'THREAD': 3
+    }
+
+    def start(self):
+        for i in range(1, 11):
+            url = 'https://www.thejakartapost.com/index/page/%d' % i
+            yield Request(url, cb=self.list_parse)
+
+    async def list_parse(self, res):
+        soup = BeautifulSoup(await res.text(), 'lxml')
+
+        # 列表页信息获取
+        for li in soup.select('div.listNews.whtPD.columns'):
+            print(li.find('h2', 'titleNews').get_text(strip=True))
+            print(urljoin(str(res.url), li.a['href']))
+            print()
+            break
+        
+        return
+
+        # 下一页
+        next_page = soup.select('.navigation-page a.jp-last')
+        if next_page:
+            url = urljoin(str(res.url), next_page[0]['href'])
             yield Request(url, cb=self.list_parse)

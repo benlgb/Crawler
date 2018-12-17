@@ -4,12 +4,10 @@
 爬虫程序 version: 1.2.0
 '''
 
-# from crawler.thejakartapost import ThejakartapostCrawler
-
-# if __name__ == '__main__':
-#     ThejakartapostCrawler().run()
-
 from crawler.twitter import TwitterCrawler
+from crawler.thejakartapost import ThejakartapostCrawler, ThejakartapostAsyncCrawler
 
 if __name__ == '__main__':
-    TwitterCrawler().run()
+    # TwitterCrawler().run()
+    # ThejakartapostCrawler().run()
+    ThejakartapostAsyncCrawler()()

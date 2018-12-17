@@ -4,7 +4,7 @@
 请求队列
 '''
 
-from queue import Queue, PriorityQueue
+from queue import PriorityQueue
 
 class RequestQueue(PriorityQueue):
     def __init__(self):
