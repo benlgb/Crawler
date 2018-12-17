@@ -20,6 +20,8 @@ class RequestController:
         负责单独一个线程的请求处理，只能启动一个
     """
 
+    _TYPE = 'SIMPLE'
+
     def __init__(self, crawler):
         self.crawler = crawler
         self.queue = crawler.queue
@@ -55,7 +57,7 @@ class RequestController:
     def _middleware(self, method, req, **kwargs):
         for middleware in self.middlewares:
             _method = getattr(middleware, method)
-            result = _method(req, crawler=self.crawler, **kwargs)
+            result = _method(req, controller=self, crawler=self.crawler, **kwargs)
             self.result_handler(result)
 
     def result_handler(self, result):
@@ -93,6 +95,13 @@ class AsyncRequestController(RequestController):
     Description:
         负责单独一个协程的请求处理，可同时启动多个
     """
+    _NUMBER = 0
+    _TYPE = 'ASYNC'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        AsyncRequestController._NUMBER += 1
+        self.number = AsyncRequestController._NUMBER
 
     async def __call__(self):
         """请求协程启动
@@ -128,7 +137,7 @@ class AsyncRequestController(RequestController):
     async def _middleware(self, method, req, **kwargs):
         for middleware in self.middlewares:
             _method = getattr(middleware, method)
-            result = _method(req, crawler=self.crawler, **kwargs)
+            result = _method(req, controller=self, crawler=self.crawler, **kwargs)
             await self.result_handler(result)
             
     async def result_handler(self, result):

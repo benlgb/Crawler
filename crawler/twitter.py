@@ -4,7 +4,7 @@ import re
 import json
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
-from src import JsonItem, Crawler, Request, UserAgentMiddleware, ProxiesMiddleware
+from src import JsonItem, Crawler, AsyncCrawler, Request, UserAgentMiddleware, ProxyMiddleware, ShowUrlMiddleware, ProxyAsyncMiddleware
 
 class TwitterItem(JsonItem):
     default_save_place = './data/twitter'
@@ -16,7 +16,7 @@ class TwitterCrawler(Crawler):
     SETTINGS = {
         'MIDDLEWARES': [
             UserAgentMiddleware(),
-            ProxiesMiddleware()
+            ProxyMiddleware()
         ]
     }
 
@@ -158,3 +158,53 @@ class TwitterCrawler(Crawler):
             'retweet_count': int(counts[1]['data-tweet-stat-count']),
             'favorite_count': int(counts[2]['data-tweet-stat-count']),
         }
+
+class TwitterAsyncCrawler(AsyncCrawler, TwitterCrawler):
+    SETTINGS = {
+        'MIDDLEWARES': [
+            UserAgentMiddleware(),
+            ProxyAsyncMiddleware(),
+            ShowUrlMiddleware()
+        ],
+        'THREAD': 2
+    }
+
+    def start(self):
+        keyword = 'Trump'
+        yield Request('https://twitter.com/i/search/timeline', params={
+            'vertical': 'news',
+            'q': keyword,
+            'src': 'typd',
+            'include_available_features': '1',
+            'include_entities': '1',
+            'reset_error_state': 'false'
+        }, headers={
+            'accept-language': 'zh-CN,zh-HK;q=0.9,zh;q=0.8,zh-TW;q=0.7'
+        }, cb=self.list_parse)
+
+    async def list_parse(self, res):
+        data = await res.json()
+        soup = BeautifulSoup(data['items_html'], 'lxml')
+        for li in soup.select('li.stream-item'):
+            data = self.information(li, str(res.url))
+            if data['footer']['reply_count'] > 0:
+                url = 'https://twitter.com/i/%s/conversation/%s' % (data['user']['username'], data['id'])
+                yield Request(url, params={
+                    'include_available_features': '1',
+                    'include_entities': '1',
+                    'max_position': '',
+                    'reset_error_state': 'false'
+                }, headers={
+                    'accept-language': 'zh-CN,zh-HK;q=0.9,zh;q=0.8,zh-TW;q=0.7'
+                }, cb=self.reply_parse, item=data)
+            else:
+                yield TwitterItem(data)
+
+    async def reply_parse(self, res):
+        data = await res.json()
+        soup = BeautifulSoup(data['items_html'], 'lxml')
+        for li in soup.select('li.ThreadedConversation--loneTweet'):
+            data = self.information(li.li, str(res.url))
+            data.pop('replies')
+            res.item['replies'].append(data)
+        yield TwitterItem(res.item)

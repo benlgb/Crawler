@@ -39,6 +39,11 @@
 - 同步单线程程序的逻辑
 - 修复了一些bug
 
+### 2.1.1 ###
+
+- 修复Twitter程序
+- 建立Twitter异步程序
+
 ## 三、测试用例 ##
 
 - thejakartapost

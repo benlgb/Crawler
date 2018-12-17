@@ -2,7 +2,7 @@
 
 from src.Crawler import Crawler, AsyncCrawler
 from src.Items import Item, FileItem, TextItem, JsonItem
-from src.Middleware import Middleware, UserAgentMiddleware, ProxiesMiddleware, ShowUrlMiddleware
+from src.Middleware import Middleware, UserAgentMiddleware, ProxyMiddleware, ShowUrlMiddleware, ProxyAsyncMiddleware
 from src.Exception import DropRequestException, DropResponseException
 from src.Queue import RequestQueue
 from src.Request import Request
@@ -16,7 +16,8 @@ __all__ = [
     'JsonItem',
     'Middleware',
     'UserAgentMiddleware',
-    'ProxiesMiddleware',
+    'ProxyMiddleware',
+    'ProxyAsyncMiddleware',
     'ShowUrlMiddleware',
     'DropRequestException',
     'DropResponseException',
